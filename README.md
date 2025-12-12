@@ -121,9 +121,22 @@ cd ../demo-app && pip install -r requirements.txt && python app.py  # порт 5
 
 ### Telegram-бот
 Использует `AGENT_API_URL` для проксирования запросов в агента. Запустите после поднятия агента.
+- Локальный запуск:  
+  ```bash
+  cd meeting-assistant/telegram-bot
+  uv run python main.py
+  ```
+- `AGENT_API_URL` у бота должен указывать на ваш публичный A2A endpoint агента (тот же URL используйте в demo-app, чтобы тестировать одно и то же подключение).
 
 ### Demo App
 Flask-приложение, отправляет A2A-запросы в агента, показывает запрос/ответ. Укажите свой `BASE_URL` и креды IAM.
+- Запуск локально:  
+  ```bash
+  cd meeting-assistant/demo-app
+  pip install -r requirements.txt
+  python app.py  # порт 5000
+  ```
+  В `app.py` задайте `BASE_URL` (A2A endpoint агента) и IAM креды (лучше вынести в env).
 
 ### Полезные скрипты и тесты
 - `agent/scripts/test_cloudru_api.py` — проверка Cloud.ru LLM (убирает `hosted_vllm/` префикс автоматически).
