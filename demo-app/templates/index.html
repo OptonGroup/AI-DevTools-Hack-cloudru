@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A Demo Inspector - Meeting Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid #333;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 1.1rem;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .panel-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .panel-content {
+            padding: 20px;
+        }
+        
+        .input-section {
+            grid-column: 1 / -1;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        textarea {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            color: #fff;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            border: none;
+            border-radius: 8px;
+            padding: 15px 30px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .json-view {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .json-key { color: #7c3aed; }
+        .json-string { color: #22c55e; }
+        .json-number { color: #f59e0b; }
+        .json-boolean { color: #ef4444; }
+        .json-null { color: #888; }
+        
+        .response-text {
+            background: rgba(0, 212, 255, 0.1);
+            border-left: 3px solid #00d4ff;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #888;
+        }
+        
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(0, 212, 255, 0.2);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .history {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .history-item:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+        
+        .history-item .time {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        
+        .history-item .message {
+            color: #00d4ff;
+            font-weight: 500;
+        }
+        
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status.success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+        
+        .status.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        .agent-info {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .info-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .info-label {
+            color: #888;
+            min-width: 120px;
+        }
+        
+        .info-value {
+            color: #fff;
+            font-weight: 500;
+        }
+        
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .quick-btn {
+            background: rgba(124, 58, 237, 0.2);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: #a78bfa;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-btn:hover {
+            background: rgba(124, 58, 237, 0.4);
+            color: #fff;
+        }
+        
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 A2A Demo Inspector</h1>
+            <p class="subtitle">Meeting Assistant Agent - Cloud.ru AI Platform</p>
+        </header>
+        
+        <div class="main-grid">
+            <!-- Input Section -->
+            <div class="panel input-section">
+                <div class="panel-header">
+                    <span>💬</span>
+                    <h2>Отправить запрос агенту</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="input-group">
+                        <textarea id="messageInput" placeholder="Введите ваш вопрос агенту...">На какой встрече мы обсуждали шахматы?</textarea>
+                        <button class="btn" id="sendBtn" onclick="sendMessage()">
+                            Отправить
+                        </button>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="quick-btn" onclick="setMessage('Какие встречи были на этой неделе?')">📅 Встречи недели</button>
+                        <button class="quick-btn" onclick="setMessage('Покажи последнюю встречу')">🕐 Последняя встреча</button>
+                        <button class="quick-btn" onclick="setMessage('О чем говорили на ретроспективе?')">📝 Ретроспектива</button>
+                        <button class="quick-btn" onclick="setMessage('Найди встречи про AI')">🤖 Про AI</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Response Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>📨</span>
+                    <h2>Ответ агента</h2>
+                    <span id="responseStatus"></span>
+                </div>
+                <div class="panel-content">
+                    <div id="responseContent">
+                        <p style="color: #888;">Отправьте запрос, чтобы увидеть ответ агента</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Request/Response JSON -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>📤</span>
+                    <h2>JSON Request / Response</h2>
+                </div>
+                <div class="panel-content">
+                    <div id="jsonContent" class="json-view">
+                        // JSON запроса и ответа появится здесь
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Agent Card -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>🎴</span>
+                    <h2>Agent Card</h2>
+                    <button class="btn-secondary btn" style="margin-left: auto; padding: 8px 15px; font-size: 0.85rem;" onclick="loadAgentCard()">
+                        Загрузить
+                    </button>
+                </div>
+                <div class="panel-content">
+                    <div id="agentCardContent" class="agent-info">
+                        <p style="color: #888;">Нажмите "Загрузить" для получения Agent Card</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- History -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span>📜</span>
+                    <h2>История запросов</h2>
+                    <button class="btn-secondary btn" style="margin-left: auto; padding: 8px 15px; font-size: 0.85rem;" onclick="clearHistory()">
+                        Очистить
+                    </button>
+                </div>
+                <div class="panel-content">
+                    <div id="historyContent" class="history">
+                        <p style="color: #888;">История запросов пуста</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let history = [];
+        
+        function setMessage(text) {
+            document.getElementById('messageInput').value = text;
+        }
+        
+        function formatJson(obj) {
+            return JSON.stringify(obj, null, 2)
+                .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+                .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+                .replace(/: (\d+)/g, ': <span class="json-number">$1</span>')
+                .replace(/: (true|false)/g, ': <span class="json-boolean">$1</span>')
+                .replace(/: null/g, ': <span class="json-null">null</span>');
+        }
+        
+        function extractAgentResponse(data) {
+            try {
+                const result = data.response.result;
+                if (result && result.history) {
+                    const agentMessages = result.history.filter(m => m.role === 'agent');
+                    if (agentMessages.length > 0) {
+                        const lastMessage = agentMessages[agentMessages.length - 1];
+                        const textPart = lastMessage.parts.find(p => p.kind === 'text');
+                        return textPart ? textPart.text : 'Нет текстового ответа';
+                    }
+                }
+                return 'Ответ не найден';
+            } catch (e) {
+                return 'Ошибка парсинга ответа';
+            }
+        }
+        
+        async function sendMessage() {
+            const message = document.getElementById('messageInput').value.trim();
+            if (!message) return;
+            
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = true;
+            btn.textContent = 'Отправка...';
+            
+            document.getElementById('responseContent').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>Ожидание ответа от агента...</span>
+                </div>
+            `;
+            document.getElementById('responseStatus').innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const agentText = extractAgentResponse(result.data);
+                    
+                    document.getElementById('responseContent').innerHTML = `
+                        <div class="response-text">${agentText.replace(/\n/g, '<br>')}</div>
+                    `;
+                    document.getElementById('responseStatus').innerHTML = '<span class="status success">✓ Успешно</span>';
+                    document.getElementById('jsonContent').innerHTML = formatJson(result.data);
+                    
+                    // Add to history
+                    history.unshift({
+                        time: new Date().toLocaleTimeString(),
+                        message: message,
+                        response: agentText,
+                        data: result.data
+                    });
+                    updateHistory();
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                document.getElementById('responseContent').innerHTML = `
+                    <p style="color: #ef4444;">Ошибка: ${error.message}</p>
+                `;
+                document.getElementById('responseStatus').innerHTML = '<span class="status error">✗ Ошибка</span>';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Отправить';
+            }
+        }
+        
+        async function loadAgentCard() {
+            document.getElementById('agentCardContent').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>Загрузка Agent Card...</span>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('/api/agent-card');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const card = result.data;
+                    document.getElementById('agentCardContent').innerHTML = `
+                        <div class="info-row">
+                            <span class="info-label">Name:</span>
+                            <span class="info-value">${card.name || 'N/A'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Description:</span>
+                            <span class="info-value">${card.description || 'N/A'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Version:</span>
+                            <span class="info-value">${card.version || 'N/A'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">URL:</span>
+                            <span class="info-value">${card.url || 'N/A'}</span>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <div class="json-view" style="max-height: 200px;">${formatJson(card)}</div>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                document.getElementById('agentCardContent').innerHTML = `
+                    <p style="color: #ef4444;">Ошибка: ${error.message}</p>
+                `;
+            }
+        }
+        
+        function updateHistory() {
+            if (history.length === 0) {
+                document.getElementById('historyContent').innerHTML = '<p style="color: #888;">История запросов пуста</p>';
+                return;
+            }
+            
+            document.getElementById('historyContent').innerHTML = history.map((item, i) => `
+                <div class="history-item" onclick="showHistoryItem(${i})">
+                    <div class="time">${item.time}</div>
+                    <div class="message">${item.message}</div>
+                </div>
+            `).join('');
+        }
+        
+        function showHistoryItem(index) {
+            const item = history[index];
+            document.getElementById('responseContent').innerHTML = `
+                <div class="response-text">${item.response.replace(/\n/g, '<br>')}</div>
+            `;
+            document.getElementById('jsonContent').innerHTML = formatJson(item.data);
+        }
+        
+        function clearHistory() {
+            history = [];
+            updateHistory();
+        }
+        
+        // Allow Enter to send
+        document.getElementById('messageInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
